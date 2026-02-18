@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_PROD
 
 export interface AnalysisResponse {
   status: 'safe' | 'malicious' | 'suspicious';
