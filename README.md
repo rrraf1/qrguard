@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# QR Guard FE (v1.0.0)
 
-## Getting Started
+Selamat datang di QR Guard FE, sebuah aplikasi frontend yang sedang dalam tahap pengembangan awal (v1) yang bertujuan untuk memindai dan menganalisis kode QR.
 
-First, run the development server:
+## Pengenalan
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Projek ini dibangun sebagai solusi untuk mempermudah pengguna dalam memindai kode QR dan mendapatkan informasi atau analisis terkait isi kode QR tersebut. Fokus utama pada versi awal ini adalah pada fungsionalitas inti pemindaian dan penyajian hasil analisis.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Fitur Saat Ini (v1)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+*   **Pemindaian Kode QR:** Memungkinkan pengguna untuk memindai kode QR menggunakan kamera perangkat.
+*   **Analisis Hasil:** Menampilkan hasil dari pemindaian kode QR, termasuk detil informasi yang terkandung di dalamnya.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Cara Kerja Analisis URL
 
-## Learn More
+Fungsi analisis URL bekerja dengan cara melakukan beberapa pemeriksaan terhadap URL yang didapat dari hasil pemindaian kode QR. Prosesnya adalah sebagai berikut:
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Mengakses URL:**
+    *   Sistem akan mencoba mengakses dan membaca konten dari URL tersebut menggunakan HTTP GET request.
+    *   Ada batas waktu (15 detik) dan pembatasan jumlah pengalihan (redirect) untuk mencegah loop tak terbatas atau kelambatan.
+    *   Header `User-Agent` diatur agar permintaan terlihat seperti dari peramban web biasa.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2.  **Analisis Respons Awal:**
+    *   **Jika Server Tidak Merespon:** Jika server tidak merespon atau ada kesalahan jaringan, URL akan ditandai sebagai "suspicious" dengan skor risiko 40, karena bisa jadi link sudah mati atau memblokir bot.
+    *   **Deteksi Pengalihan (Redirect):** Jika URL asli berbeda dengan URL akhir setelah pengalihan, ini dianggap sebagai potensi risiko (skor +20).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3.  **Analisis Konten:**
+    *   **Deteksi Unduhan Otomatis:** Sistem memeriksa `Content-Type` dan `Content-Disposition` untuk mendeteksi jika URL mencoba mengunduh file secara otomatis (misalnya, `.apk`, `.exe`, `.zip`). Jika terdeteksi, ini akan memberikan skor risiko tinggi (skor +60). Ditambah lagi jika ekstensi file tersebut memang termasuk yang berbahaya (skor +40).
+    *   **Script Pengalihan Paksa:** Memeriksa keberadaan script JavaScript yang memaksa pengalihan halaman (misalnya, `window.location` atau `location.replace` dalam tag `<script>`). Ini menambah skor risiko (skor +15).
+    *   **Kode Mencurigakan:** Mencari pola kode JavaScript yang ter-enkripsi atau ter-obfuscated (`eval(`, `unescape(`), yang bisa jadi menyembunyikan malware (skor +30).
+    *   **Formulir Tidak Aman:**
+        *   Jika halaman berisi formulir (`<form>`) dan diakses melalui koneksi HTTP (bukan HTTPS), ini dianggap tidak aman untuk input data (skor +40).
+        *   Jika formulir tersebut berisi kolom kata sandi (`type="password"`), ini juga menambah skor risiko (skor +20).
 
-## Deploy on Vercel
+4.  **Penentuan Status Akhir:**
+    *   Berdasarkan total akumulasi skor risiko:
+        *   **"malicious"**: Jika skor mencapai 70 atau lebih.
+        *   **"suspicious"**: Jika skor antara 25 hingga 69.
+        *   **"safe"**: Jika skor di bawah 25.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Hasil analisis ini kemudian dikembalikan dalam bentuk objek `AnalysisResponse` yang berisi status, URL asli, URL akhir, temuan (findings), dan skor risiko. Fungsi ini adalah bagian dari logika backend atau library yang akan dipanggil oleh aplikasi frontend (QR Guard FE) Anda untuk menganalisis URL yang ditemukan pada kode QR.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Teknologi yang Digunakan
+
+*   Next.js
+*   React
+*   TypeScript
+
+## Pengembangan
+
+Projek ini masih dalam tahap pengembangan awal. Kami menerima masukan dan kontribusi untuk pengembangan lebih lanjut.
+
+---
+_Versi: 1.0.0_
